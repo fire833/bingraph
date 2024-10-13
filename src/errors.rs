@@ -16,25 +16,16 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use node::BinNode;
-use pathiter::PathIterator;
-use rustworkx_core::{centrality::betweenness_centrality, petgraph::Graph};
+use std::fmt::Display;
 
-mod errors;
-mod node;
-mod pathiter;
+pub enum BingraphError {
+    GeneralError(String),
+}
 
-fn main() {
-    let mut graph: Graph<BinNode, (String, String)> = rustworkx_core::petgraph::Graph::new();
-
-    for path in PathIterator::new(env!("PATH")) {
-        let s = path.path();
-        if let Ok(node) = BinNode::try_from(path) {
-            graph.add_node(node);
-        } else {
-            println!("unable to create node for object {:?}", s.as_path());
+impl Display for BingraphError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            BingraphError::GeneralError(e) => write!(f, "{}", e),
         }
     }
-
-    let betweenness = betweenness_centrality(&graph, true, true, 4);
 }

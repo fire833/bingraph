@@ -16,25 +16,36 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use node::BinNode;
-use pathiter::PathIterator;
-use rustworkx_core::{centrality::betweenness_centrality, petgraph::Graph};
+use std::fs::DirEntry;
 
-mod errors;
-mod node;
-mod pathiter;
+use crate::errors::BingraphError;
 
-fn main() {
-    let mut graph: Graph<BinNode, (String, String)> = rustworkx_core::petgraph::Graph::new();
+/// A BinNode is a wrapper around a filesystem node on the searched system. This
+/// includes shared libraries, ELF binaries, and interpreted executables.
+pub struct BinNode {
+    path: String,
 
-    for path in PathIterator::new(env!("PATH")) {
-        let s = path.path();
-        if let Ok(node) = BinNode::try_from(path) {
-            graph.add_node(node);
-        } else {
-            println!("unable to create node for object {:?}", s.as_path());
-        }
+    node_type: NodeType,
+}
+
+impl BinNode {
+    pub fn path(&self) -> String {
+        self.path.clone()
     }
+}
 
-    let betweenness = betweenness_centrality(&graph, true, true, 4);
+pub enum NodeType {
+    ELFBinary,
+    ELFLibrary,
+    InterpretedExecutable,
+}
+
+impl TryFrom<DirEntry> for BinNode {
+    type Error = BingraphError;
+
+    fn try_from(value: DirEntry) -> Result<Self, Self::Error> {
+        Err(BingraphError::GeneralError(
+            "not implemented yet".to_string(),
+        ))
+    }
 }
