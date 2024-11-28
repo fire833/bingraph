@@ -16,35 +16,17 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{fs, io::Write};
+#[derive(Debug, clap::Parser)]
+pub struct BingraphArgs {
+    /// Output location for constructed graph file.
+    #[arg(short, long, default_value_t = String::from("graph.json"))]
+    pub output: String,
 
-use clap::Parser;
-use cli::BingraphArgs;
-use errors::BingraphError;
-use graph::BinGraph;
+    /// Specify a path string to search through for acquiring binaries.
+    #[arg(short, long, default_value_t = env!("PATH").to_string())]
+    pub bin_path: String,
 
-mod cli;
-mod errors;
-mod graph;
-mod node;
-mod pathiter;
-
-fn main() -> Result<(), BingraphError> {
-    let args = BingraphArgs::parse();
-    let g = match BinGraph::new(args.bin_path, args.lib_path) {
-        Ok(g) => g,
-        Err(e) => return Err(e),
-    };
-
-    let data = match serde_json::to_string_pretty(&g) {
-        Ok(d) => d,
-        Err(e) => return Err(e.into()),
-    };
-
-    match fs::File::create(args.output) {
-        Ok(mut f) => f.write(data.as_bytes()).unwrap(),
-        Err(e) => return Err(e.into()),
-    };
-
-    Ok(())
+    /// Specify a path string to search through for acquiring binaries.
+    #[arg(short, long, default_value_t = String::from("/usr/x86_64-pc-linux-gnu/lib64:/usr/lib:/usr/local/lib:/usr/x86_64-pc-linux-gnu/lib"))]
+    pub lib_path: String,
 }

@@ -16,7 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::fs::{self, DirEntry, ReadDir};
+use std::{
+    f64::consts::E,
+    fs::{self, DirEntry, ReadDir},
+};
 
 /// Implements an iterator to iterate through all files
 /// that are found within the provided system path.
@@ -53,7 +56,19 @@ impl Iterator for PathIterator {
         match &mut self.curr_iter {
             Some(i) => match i.next() {
                 Some(dir) => match dir {
-                    Ok(entry) => Some(entry),
+                    Ok(entry) => match entry.file_type() {
+                        Ok(info) => {
+                            if info.is_dir() {
+                                self.next()
+                            } else {
+                                Some(entry)
+                            }
+                        }
+                        Err(e) => {
+                            println!("unable to get file type for path {:?}: {}", entry, e);
+                            self.next()
+                        }
+                    },
                     Err(_) => self.next(),
                 },
                 None => {

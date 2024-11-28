@@ -16,20 +16,154 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use rustworkx_core::petgraph::Graph;
+use std::collections::HashMap;
+
 use serde::Serialize;
 
-use crate::{errors::BingraphError, node::BinNode};
+use rustworkx_core::{
+    centrality::{
+        betweenness_centrality, closeness_centrality, eigenvector_centrality, katz_centrality,
+    },
+    petgraph::{
+        adj::NodeIndex,
+        graph::DiGraph,
+        visit::{IntoNodeIdentifiers, IntoNodeReferences},
+    },
+};
+
+use crate::{errors::BingraphError, node::BinNode, pathiter::PathIterator};
 
 #[derive(Debug, Serialize)]
 pub struct BinGraph {
     nodes: Vec<BinNode>,
+
+    edges: Vec<(String, String)>,
+
+    average_degree: f64,
+    num_nodes: u32,
+    num_edges: u32,
+    // diameter: u32,
+
+    // degree_distribution: HashMap<u32, u32>,
 }
 
-impl TryFrom<Graph<BinNode, (String, String)>> for BinGraph {
-    type Error = BingraphError;
+impl BinGraph {
+    pub fn new(bin_path: String, lib_path: String) -> Result<Self, BingraphError> {
+        let mut edges: Vec<((NodeIndex, String), (NodeIndex, String))> = vec![];
+        let mut ext_nodes: Vec<BinNode> = vec![];
 
-    fn try_from(value: Graph<BinNode, (String, String)>) -> Result<Self, Self::Error> {
-        todo!()
+        // Mapping of BinNode names and their corresponding node index.
+        let mut nodes: HashMap<String, NodeIndex> = HashMap::new();
+        let mut graph: DiGraph<BinNode, u32> = rustworkx_core::petgraph::Graph::new();
+
+        let mut total_path = bin_path;
+        total_path.push(':');
+        total_path.push_str(&lib_path);
+
+        println!("searching through {} for things", total_path);
+
+        // Go through every file and try to add it as a node, and add a reference
+        // from the name to the nodeindex.
+        for path in PathIterator::new(&total_path) {
+            let s = path.path();
+            match BinNode::try_from(path) {
+                Ok(node) => {
+                    // println!("created node at {:?}", s);
+                    let nnode = node.clone();
+                    let idx = graph.add_node(node);
+                    nodes.insert(nnode.name(), idx.index() as u32);
+                }
+                Err(e) => println!("unable to create node at {:?}: {}", s, e),
+            }
+        }
+
+        // Iterate through every node and find it's dependencies, add the links.
+        for (sidx, node) in graph.node_references() {
+            for neigh in node.get_dependencies() {
+                if let Some((name, didx)) = nodes.get_key_value(neigh) {
+                    edges.push(((sidx.index() as u32, node.name()), (*didx, name.clone())));
+                }
+            }
+        }
+
+        // Add the edges to the main graph structure too.
+        for (src, dst) in edges.iter() {
+            graph.add_edge(NodeIndex::from(src.0), NodeIndex::from(dst.0), 0);
+        }
+
+        // Compute our centralities
+        println!("computing betweeness centrality for graph");
+        let betweenness = betweenness_centrality(&graph, true, true, 4);
+        println!("computing katz centrality for graph");
+        let katz = match katz_centrality(
+            &graph,
+            |_| Ok::<f64, BingraphError>(1.),
+            None,
+            None,
+            None,
+            Some(100),
+            None,
+        ) {
+            Ok(k) => k,
+            Err(e) => {
+                println!("unable to compute katz centrality: {}", e);
+                None
+            }
+        };
+        println!("computing eigenvector centrality for graph");
+        let eigen =
+            match eigenvector_centrality(&graph, |_| Ok::<f64, BingraphError>(1.), Some(100), None)
+            {
+                Ok(e) => e,
+                Err(e) => {
+                    println!("unable to compute eigenvector_centrality: {}", e);
+                    None
+                }
+            };
+        println!("computing closeness centrality for graph");
+        let closeness = closeness_centrality(&graph, true);
+        println!("computing graph diameter");
+
+        // Assign centralities to the new nodes and append to
+        for (idx, node) in graph.node_references() {
+            let mut new_node = node.clone();
+            if let Some(Some(value)) = betweenness.get(idx.index()) {
+                new_node.set_betweeness_centrality(*value);
+            }
+            if let Some(ref vec) = katz {
+                if let Some(value) = vec.get(idx.index()) {
+                    new_node.set_katz_centrality(*value);
+                }
+            }
+
+            if let Some(ref vec) = eigen {
+                if let Some(value) = vec.get(idx.index()) {
+                    new_node.set_eigen_centrality(*value);
+                }
+            }
+            if let Some(Some(value)) = closeness.get(idx.index()) {
+                new_node.set_closeness_centrality(*value);
+            }
+            ext_nodes.push(new_node);
+        }
+
+        let ext_edges: Vec<(String, String)> = edges
+            .iter()
+            .map(|x| (x.0 .1.clone(), x.1 .1.clone()))
+            .collect();
+
+        let num_nodes = graph.node_count() as u32;
+        let num_edges = graph.edge_count() as u32;
+        let avg_degree = num_nodes as f64 / num_edges as f64;
+
+        return Ok(Self {
+            nodes: ext_nodes,
+            edges: ext_edges,
+            num_nodes: num_nodes,
+            num_edges: num_edges,
+            average_degree: avg_degree,
+        });
     }
+
+    // pub fn serialize_graphviz(&self) -> String {}
 }

@@ -25,7 +25,7 @@ use crate::errors::BingraphError;
 
 /// A BinNode is a wrapper around a filesystem node on the searched system. This
 /// includes shared libraries, ELF binaries, and interpreted executables.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct BinNode {
     name: String,
     absolute_path: String,
@@ -35,7 +35,6 @@ pub struct BinNode {
     #[serde(skip)]
     dependencies: Vec<String>,
 
-    id: Option<usize>,
     betweenness_centrality: Option<f64>,
     katz_centrality: Option<f64>,
     eigen_centrality: Option<f64>,
@@ -43,12 +42,8 @@ pub struct BinNode {
 }
 
 impl BinNode {
-    pub fn id(&self) -> String {
-        self.absolute_path.clone()
-    }
-
-    pub fn set_id(&mut self, id: usize) {
-        self.id = Some(id);
+    pub fn name(&self) -> String {
+        self.name.clone()
     }
 
     pub fn set_betweeness_centrality(&mut self, c: f64) {
@@ -70,6 +65,10 @@ impl BinNode {
     pub fn get_type(&self) -> NodeType {
         self.node_type.clone()
     }
+
+    pub fn get_dependencies(&self) -> &Vec<String> {
+        &self.dependencies
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -87,10 +86,10 @@ impl Serialize for NodeType {
         S: serde::Serializer,
     {
         match self {
-            NodeType::ELFBinary => serializer.serialize_bytes("elf_binary".as_bytes()),
-            NodeType::ELFLibrary => serializer.serialize_bytes("elb_library".as_bytes()),
-            NodeType::PortableExecutable => serializer.serialize_bytes("pe".as_bytes()),
-            NodeType::InterpretedExecutable => serializer.serialize_bytes("interp".as_bytes()),
+            NodeType::ELFBinary => serializer.serialize_str("elf_binary"),
+            NodeType::ELFLibrary => serializer.serialize_str("elf_library"),
+            NodeType::PortableExecutable => serializer.serialize_str("pe"),
+            NodeType::InterpretedExecutable => serializer.serialize_str("interp"),
         }
     }
 }
@@ -122,8 +121,7 @@ impl TryFrom<DirEntry> for BinNode {
                             .into_string()
                             .unwrap_or_default(),
                         node_type: t,
-                        dependencies: vec![],
-                        id: None,
+                        dependencies: elf.libraries.into_iter().map(String::from).collect(),
                         betweenness_centrality: None,
                         katz_centrality: None,
                         eigen_centrality: None,
@@ -131,7 +129,7 @@ impl TryFrom<DirEntry> for BinNode {
                     })
                 }
 
-                Object::PE(_) => Ok(Self {
+                Object::PE(pe) => Ok(Self {
                     name: value.file_name().into_string().unwrap_or_default(),
                     absolute_path: value
                         .path()
@@ -139,8 +137,7 @@ impl TryFrom<DirEntry> for BinNode {
                         .into_string()
                         .unwrap_or_default(),
                     node_type: NodeType::PortableExecutable,
-                    dependencies: vec![],
-                    id: None,
+                    dependencies: pe.libraries.into_iter().map(String::from).collect(),
                     betweenness_centrality: None,
                     katz_centrality: None,
                     eigen_centrality: None,

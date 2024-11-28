@@ -19,11 +19,14 @@
 use std::{fmt::Display, io};
 
 use goblin::error::Error;
+use serde_json::Error as SerdeJSONError;
 
+#[derive(Debug)]
 pub enum BingraphError {
     GeneralError(String),
     IOError(io::Error),
     GoblinError(Error),
+    SerdeError(SerdeJSONError),
 }
 
 impl Display for BingraphError {
@@ -32,6 +35,7 @@ impl Display for BingraphError {
             Self::GeneralError(e) => write!(f, "{}", e),
             Self::IOError(e) => write!(f, "io: {}", e),
             Self::GoblinError(e) => write!(f, "goblin: {}", e),
+            Self::SerdeError(e) => write!(f, "serde_json: {}", e),
         }
     }
 }
@@ -45,6 +49,12 @@ impl From<io::Error> for BingraphError {
 impl From<Error> for BingraphError {
     fn from(value: Error) -> Self {
         Self::GoblinError(value)
+    }
+}
+
+impl From<SerdeJSONError> for BingraphError {
+    fn from(value: SerdeJSONError) -> Self {
+        Self::SerdeError(value)
     }
 }
 
