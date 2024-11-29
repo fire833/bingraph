@@ -46,5 +46,12 @@ fn main() -> Result<(), BingraphError> {
         Err(e) => return Err(e.into()),
     };
 
+    if args.output_graphviz != "" {
+        match fs::File::create(args.output_graphviz) {
+            Ok(mut f) => f.write(g.serialize_graphviz().as_bytes()).unwrap(),
+            Err(e) => return Err(e.into()),
+        };
+    }
+
     Ok(())
 }

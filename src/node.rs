@@ -46,6 +46,27 @@ impl BinNode {
         self.name.clone()
     }
 
+    pub fn format_graphviz(&self) -> String {
+        let color: &str = match self.node_type {
+            NodeType::ELFBinary => "blue",
+            NodeType::ELFLibrary => "green",
+            NodeType::PortableExecutable => "pink",
+            NodeType::InterpretedExecutable => "red",
+        };
+
+        return format!(
+            "  \"{}\" [style=filled, color=\"{}\", tooltip=\"Absolute Path: {}\\nOutdegree: {}\\nBetweeness: {}\\nKatz: {}\\nEigen: {}\\nCloseness: {}\"];\n",
+            self.name(),
+            color,
+            self.absolute_path,
+            self.dependencies.len(),
+            self.betweenness_centrality.unwrap_or_default(),
+            self.katz_centrality.unwrap_or_default(),
+            self.eigen_centrality.unwrap_or_default(),
+            self.closeness_centrality.unwrap_or_default(),
+        );
+    }
+
     pub fn set_betweeness_centrality(&mut self, c: f64) {
         self.betweenness_centrality = Some(c);
     }

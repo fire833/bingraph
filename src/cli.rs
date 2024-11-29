@@ -18,9 +18,13 @@
 
 #[derive(Debug, clap::Parser)]
 pub struct BingraphArgs {
-    /// Output location for constructed graph file.
+    /// Output location for constructed graph JSON.
     #[arg(short, long, default_value_t = String::from("graph.json"))]
     pub output: String,
+
+    /// Output location for constructed graphviz.
+    #[arg(long, default_value_t = String::from(""))]
+    pub output_graphviz: String,
 
     /// Specify a path string to search through for acquiring binaries.
     #[arg(short, long, default_value_t = env!("PATH").to_string())]

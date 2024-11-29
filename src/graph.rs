@@ -165,5 +165,24 @@ impl BinGraph {
         });
     }
 
-    // pub fn serialize_graphviz(&self) -> String {}
+    pub fn serialize_graphviz(&self) -> String {
+        let mut graph: String = "".to_string();
+
+        graph.push_str("digraph bingraph {\n\n");
+
+        for node in self.nodes.iter() {
+            let n = node.format_graphviz();
+            graph.push_str(&n);
+        }
+
+        graph.push_str("\n\n");
+
+        for edge in self.edges.iter() {
+            let e = format!("  \"{}\" -> \"{}\"\n", edge.0, edge.1);
+            graph.push_str(&e);
+        }
+
+        graph.push_str("\n}");
+        return graph;
+    }
 }
