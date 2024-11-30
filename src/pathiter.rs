@@ -16,10 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{
-    f64::consts::E,
-    fs::{self, DirEntry, ReadDir},
-};
+use std::fs::{self, DirEntry, ReadDir};
 
 /// Implements an iterator to iterate through all files
 /// that are found within the provided system path.

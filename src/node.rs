@@ -83,10 +83,6 @@ impl BinNode {
         self.closeness_centrality = Some(c);
     }
 
-    pub fn get_type(&self) -> NodeType {
-        self.node_type.clone()
-    }
-
     pub fn get_dependencies(&self) -> &Vec<String> {
         &self.dependencies
     }

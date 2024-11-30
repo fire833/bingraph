@@ -24,11 +24,7 @@ use rustworkx_core::{
     centrality::{
         betweenness_centrality, closeness_centrality, eigenvector_centrality, katz_centrality,
     },
-    petgraph::{
-        adj::NodeIndex,
-        graph::DiGraph,
-        visit::{IntoNodeIdentifiers, IntoNodeReferences},
-    },
+    petgraph::{adj::NodeIndex, graph::DiGraph, visit::IntoNodeReferences},
 };
 
 use crate::{errors::BingraphError, node::BinNode, pathiter::PathIterator};
