@@ -22,10 +22,13 @@ def main():
 	xu = []
 	yu = []
 	for xval, yval in dist.items():
-		xu.append(xval)
+		xu.append(int(xval))
 		yu.append(yval)
 
-	x, y = zip(*sorted(zip(xu, yu), key=lambda x: x[0]))
+	x, y = zip(*sorted(zip(xu, yu)))
+
+	print(x)
+	print(y)
 
 	plt.plot(x, y)
 	plt.yscale("log")
