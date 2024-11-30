@@ -34,13 +34,11 @@ pub struct BinGraph {
     nodes: Vec<BinNode>,
 
     edges: Vec<(String, String)>,
+    degree_distribution: HashMap<u32, u32>,
 
     average_degree: f64,
     num_nodes: u32,
     num_edges: u32,
-    // diameter: u32,
-
-    // degree_distribution: HashMap<u32, u32>,
 }
 
 impl BinGraph {
@@ -50,6 +48,7 @@ impl BinGraph {
 
         // Mapping of BinNode names and their corresponding node index.
         let mut nodes: HashMap<String, NodeIndex> = HashMap::new();
+        let mut node_indegree: HashMap<String, u32> = HashMap::new();
         let mut graph: DiGraph<BinNode, u32> = rustworkx_core::petgraph::Graph::new();
 
         let mut total_path = bin_path;
@@ -68,6 +67,7 @@ impl BinGraph {
                     let nnode = node.clone();
                     let idx = graph.add_node(node);
                     nodes.insert(nnode.name(), idx.index() as u32);
+                    node_indegree.insert(nnode.name(), 0);
                 }
                 Err(e) => println!("unable to create node at {:?}: {}", s, e),
             }
@@ -78,6 +78,11 @@ impl BinGraph {
             for neigh in node.get_dependencies() {
                 if let Some((name, didx)) = nodes.get_key_value(neigh) {
                     edges.push(((sidx.index() as u32, node.name()), (*didx, name.clone())));
+
+                    // Keep track of the indegree for each node as well.
+                    if let Some(v) = node_indegree.get(name) {
+                        node_indegree.insert(name.clone(), v + 1);
+                    }
                 }
             }
         }
@@ -139,6 +144,15 @@ impl BinGraph {
             if let Some(Some(value)) = closeness.get(idx.index()) {
                 new_node.set_closeness_centrality(*value);
             }
+
+            // Specify the outdegree of the node.
+            new_node.set_out_degree(new_node.get_dependencies().len() as u32);
+
+            // Specify the indegree of the node.
+            if let Some(v) = node_indegree.get(&new_node.name()) {
+                new_node.set_in_degree(*v);
+            }
+
             ext_nodes.push(new_node);
         }
 
@@ -151,12 +165,27 @@ impl BinGraph {
         let num_edges = graph.edge_count() as u32;
         let avg_degree = num_nodes as f64 / num_edges as f64;
 
+        // Compute our degree distribution
+        println!("computing degree distribution for graph");
+        let mut deg_dist: HashMap<u32, u32> = HashMap::new();
+        for node in ext_nodes.iter() {
+            let deg = node.get_in_degree();
+
+            // If this degree has been found, increment
+            if let Some(freq) = deg_dist.get(&deg) {
+                deg_dist.insert(deg, freq + 1);
+            } else {
+                deg_dist.insert(deg, 1);
+            }
+        }
+
         return Ok(Self {
             nodes: ext_nodes,
             edges: ext_edges,
             num_nodes: num_nodes,
             num_edges: num_edges,
             average_degree: avg_degree,
+            degree_distribution: deg_dist,
         });
     }
 

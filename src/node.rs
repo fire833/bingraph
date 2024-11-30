@@ -35,6 +35,9 @@ pub struct BinNode {
     #[serde(skip)]
     dependencies: Vec<String>,
 
+    in_degree: u32,
+    out_degree: u32,
+
     betweenness_centrality: Option<f64>,
     katz_centrality: Option<f64>,
     eigen_centrality: Option<f64>,
@@ -55,11 +58,12 @@ impl BinNode {
         };
 
         return format!(
-            "  \"{}\" [style=filled, color=\"{}\", tooltip=\"Absolute Path: {}\\nOutdegree: {}\\nBetweeness: {}\\nKatz: {}\\nEigen: {}\\nCloseness: {}\"];\n",
+            "  \"{}\" [style=filled, color=\"{}\", tooltip=\"Absolute Path: {}\\nOutdegree: {}\\nIndegree: {}\\nBetweeness: {}\\nKatz: {}\\nEigen: {}\\nCloseness: {}\"];\n",
             self.name(),
             color,
             self.absolute_path,
             self.dependencies.len(),
+            self.in_degree,
             self.betweenness_centrality.unwrap_or_default(),
             self.katz_centrality.unwrap_or_default(),
             self.eigen_centrality.unwrap_or_default(),
@@ -83,8 +87,20 @@ impl BinNode {
         self.closeness_centrality = Some(c);
     }
 
+    pub fn set_in_degree(&mut self, v: u32) {
+        self.in_degree = v;
+    }
+
+    pub fn set_out_degree(&mut self, v: u32) {
+        self.out_degree = v;
+    }
+
     pub fn get_dependencies(&self) -> &Vec<String> {
         &self.dependencies
+    }
+
+    pub fn get_in_degree(&self) -> u32 {
+        self.in_degree
     }
 }
 
@@ -138,6 +154,8 @@ impl TryFrom<DirEntry> for BinNode {
                             .into_string()
                             .unwrap_or_default(),
                         node_type: t,
+                        in_degree: 0,
+                        out_degree: 0,
                         dependencies: elf.libraries.into_iter().map(String::from).collect(),
                         betweenness_centrality: None,
                         katz_centrality: None,
@@ -154,6 +172,8 @@ impl TryFrom<DirEntry> for BinNode {
                         .into_string()
                         .unwrap_or_default(),
                     node_type: NodeType::PortableExecutable,
+                    in_degree: 0,
+                    out_degree: 0,
                     dependencies: pe.libraries.into_iter().map(String::from).collect(),
                     betweenness_centrality: None,
                     katz_centrality: None,
