@@ -33,6 +33,6 @@ pub struct BingraphArgs {
     pub bin_path: String,
 
     /// Specify a path string to search through for acquiring binaries.
-    #[arg(short, long, default_value_t = String::from("/usr/x86_64-pc-linux-gnu/lib64:/usr/lib:/usr/local/lib:/usr/x86_64-pc-linux-gnu/lib"))]
+    #[arg(short, long, default_value_t = String::from("/usr/x86_64-pc-linux-gnu/lib64:/usr/x86_64-linux-gnu/lib64:/usr/lib:/usr/local/lib:/usr/x86_64-pc-linux-gnu/lib:/usr/x86_64-linux-gnu/lib:/usr/local/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu64:/lib:/lib64:/usr/local/lib64:"))]
     pub lib_path: String,
 }
