@@ -118,7 +118,6 @@ impl BinGraph {
             };
         println!("computing closeness centrality for graph");
         let closeness = closeness_centrality(&graph, true);
-        println!("computing graph diameter");
 
         // Assign centralities to the new nodes and append to
         for (idx, node) in graph.node_references() {

@@ -16,6 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::env;
+
 #[derive(Debug, clap::Parser)]
 pub struct BingraphArgs {
     /// Output location for constructed graph JSON.
@@ -27,7 +29,7 @@ pub struct BingraphArgs {
     pub output_graphviz: String,
 
     /// Specify a path string to search through for acquiring binaries.
-    #[arg(short, long, default_value_t = env!("PATH").to_string())]
+    #[arg(short, long, default_value_t = env::var("PATH").unwrap().to_string())]
     pub bin_path: String,
 
     /// Specify a path string to search through for acquiring binaries.
